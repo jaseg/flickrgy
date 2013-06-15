@@ -1,0 +1,139 @@
+<html>
+	<head>
+		<title>Flickrgy</title>
+		<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.2.0/pure-min.css">
+		<style type="text/css">
+			#debug-info {
+				color: #eee3d0;
+				background-color: rgba(30, 20, 10, 0.7);
+			}
+			#debug-info > h1 {
+				display: inline;
+			}
+			#level-input {
+				background: transparent;
+				color: #eee3d0;
+				font-size: 20px;
+			}
+			::-webkit-scrollbar { 
+				display: none; 
+			}
+		</style>
+		<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+		<script src="apikey.js"></script>
+		<script src="labmit.js"></script>
+		<script src="distribution.js"></script>
+		<script type="text/javascript">
+			var items = new Array();
+			var index = 0;
+			var refresher = null;
+
+			function displayImages(data) {
+				items = new Array();
+				$.each(data.photos.photo, function(i,e){
+						$.getJSON("http://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key="+APIKEY+"&photo_id="+e.id+"&format=json&jsoncallback=?", function(data){
+								$.each(data.sizes.size, function(i,e){
+									if(e.label == "Large" || e.label == "Original"){
+										items.push(e.source);
+										return false;
+									}
+								});
+							});
+						});
+				clearInterval(refresher);
+				nextImage();
+				refresher = setInterval(nextImage, 2000);
+			}
+
+			function nextImage(){
+				if(items[index] != undefined){
+					var bgdata = {
+						'background': 'url('+items[index]+') no-repeat center center fixed',
+						'-webkit-background-size': 'cover',
+						'-moz-background-size': 'cover',
+						'-o-background-size': 'cover',
+						'background-size': 'cover'}
+					$('html').css(bgdata);
+					$('#photo-id').text(index);
+				}
+				index = index + 1;
+				if(index>=items.length){
+					index = 0;
+				}
+				//pre-fetch next image
+				if(items[index] != undefined){
+					var im = new Image();
+					im.src = items[index];
+				}
+			}
+
+			function levelChanged(){
+				var lvl = $("#level-input").val();
+				computeLevel(lvl);
+			}
+
+			function setLevel(lvl){
+				$("#auto-level").text(lvl.toFixed(2));
+				var tags = new Array();
+				center = 500+(parseFloat(lvl)+1.0)/2.0*(labmit.length-1000); 
+				var nd = new NormalDistribution(200, center)
+				for(var i=0; i<10; i++){
+					tags.push(labmit[labmit.length-nd.sampleInt()]);
+				}
+				console.log("Sampling ", center, tags);
+				fetchImages(tags);
+			}
+
+			function fetchImages(tags){
+				$("#search-tags").text(tags.join(", "));
+				$.getJSON("http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="+APIKEY+"&tags="+tags.join(",")+"&per_page=20&format=json&jsoncallback=?&sort=relevance&content_type=1", displayImages);
+			}
+
+			setLevel(0.0);
+
+			function computeLevel(delta){
+				if(delta == 0){
+					delta = 1;
+				}
+				var foo = delta/1000;
+				var sign = 1;
+				if(foo<0){
+					sign = -1;
+					foo = -foo;
+				}
+				if(foo>1){
+					foo = 1;
+				}
+				var GAMMA = 1/20;
+				var corr = -sign*Math.pow(foo, GAMMA);
+				console.log('AUTO', delta, foo, corr);
+				setLevel(corr);
+			}
+
+			function getConsumption(){
+				var to = new Date().getTime();
+				var from = to-1000*60*5;
+				$.getJSON('http://localhost/middleware.php/data/3133df40-d5b5-11e2-83cd-01e8204ee975.json?from='+from+'&to='+to,
+					function(data){
+						console.log('meterdata', data);
+						tuples = data.data.tuples;
+						delta = tuples[tuples.length-1][1]-tuples[0][1];
+						computeLevel(delta);
+					});
+			}
+
+			getConsumption();
+			consumptionFetcher = setInterval(getConsumption, 15000);
+		</script>
+	</head>
+	<body>
+		<a href="#debug" style="display: block; height: 100%; width: 100%; cursor: default"></a>
+		<div id="debug-info">
+			<h1 id="search-tags"></h1><h1> / </h1><h1 id="photo-id"></h1><h1> / </h1><h1 id="auto-level"></h1>
+			<form class="pure-form" action="javascript:levelChanged()">
+				<input type="text" id="level-input" value="0"></input>
+			</form>
+			<a name="debug"></a>
+		</div>
+	</body>
+</html>
