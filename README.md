@@ -22,5 +22,5 @@ Future work
 
 Credits
 =======
-The labMIT dataset is from Dodds PS, Harris KD, Kloumann IM, Bliss CA, Danforth CM (2011): Temporal Patterns of Happiness and Information in a Global Social Network: Hedonometrics and Twitter. PLoS ONE 6(12): e26752. doi:10.1371/journal.pone.0026752 ([http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0026752])
+The labMIT dataset is from Dodds PS, Harris KD, Kloumann IM, Bliss CA, Danforth CM (2011): Temporal Patterns of Happiness and Information in a Global Social Network: Hedonometrics and Twitter. PLoS ONE 6(12): e26752. doi:10.1371/journal.pone.0026752 http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0026752
 
